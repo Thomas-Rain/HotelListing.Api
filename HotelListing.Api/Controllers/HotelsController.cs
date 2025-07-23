@@ -76,7 +76,7 @@ namespace HotelListing.Api.Controllers
             }
 
             hotels.Remove(hotel);
-            return NoContent();
+            return NoContent(); 
         }
     }
 }
