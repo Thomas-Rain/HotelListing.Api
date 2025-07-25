@@ -11,11 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HotelListing.Api.Migrations
 {
     [DbContext(typeof(HotelListingDbContext))]
-    [Migration("20250724090904_Initial")]
-    partial class Initial
+    [Migration("20250725100048_CountryIdToId")]
+    partial class CountryIdToId
     {
         /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,13 +24,13 @@ namespace HotelListing.Api.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("HotelListing.Api.Data.Country", b =>
+            modelBuilder.Entity("HotelListing.API.Data.Country", b =>
                 {
-                    b.Property<int>("CountryId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CountryId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -40,12 +40,12 @@ namespace HotelListing.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("CountryId");
+                    b.HasKey("Id");
 
                     b.ToTable("Countries");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Hotel", b =>
+            modelBuilder.Entity("HotelListing.API.Data.Hotel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -64,8 +64,8 @@ namespace HotelListing.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
+                    b.Property<double>("Rating")
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -74,9 +74,9 @@ namespace HotelListing.Api.Migrations
                     b.ToTable("Hotels");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Hotel", b =>
+            modelBuilder.Entity("HotelListing.API.Data.Hotel", b =>
                 {
-                    b.HasOne("HotelListing.Api.Data.Country", "Country")
+                    b.HasOne("HotelListing.API.Data.Country", "Country")
                         .WithMany("Hotels")
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -85,7 +85,7 @@ namespace HotelListing.Api.Migrations
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Country", b =>
+            modelBuilder.Entity("HotelListing.API.Data.Country", b =>
                 {
                     b.Navigation("Hotels");
                 });

@@ -2,10 +2,8 @@
 
 namespace HotelListing.Api.Models.Country
 {
-    public class GetCountryDto
+    public class GetCountryDto : BaseCountryDto
     {
         public int Id { get; set; }
-        public String Name { get; set; }
-        public String ShortName { get; set; }
     }
 }
