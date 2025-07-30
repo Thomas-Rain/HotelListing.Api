@@ -43,33 +43,27 @@ namespace HotelListing.API.Repository
 
         public async Task<AuthResponseDto> Login(LoginDto loginDto)
         {
-           _user = await _userManager.FindByEmailAsync(loginDto.Email);
-            if (_user is null)
-            {
-                return default;
-            }
- 
-            bool isValidCredentials = await _userManager.CheckPasswordAsync(_user, loginDto.Password);
-
             _user = await _userManager.FindByEmailAsync(loginDto.Email);
             if (_user is null)
             {
                 return default;
             }
 
+            bool isValidCredentials = await _userManager.CheckPasswordAsync(_user, loginDto.Password);
+
+            if (!isValidCredentials)
+            {
+                return default;
+            }
+
             var token = await GenerateToken();
             return new AuthResponseDto
-
             {
-
                 Token = token,
-
-                UserId = _user.Id,
-
-                RefreshToken = await CreateRefreshToken()
-
+                UserId = _user.Id
             };
         }
+        
 
         public async Task<IEnumerable<IdentityError>> Register(ApiUserDto userDto)
         {

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using HotelListing.API.Repository;
 using System.Threading.Tasks;
 using System.Linq;
+using HotelListing.Api.Contracts;
 
 namespace HotelListing.API.Controllers
 {
@@ -12,9 +13,9 @@ namespace HotelListing.API.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly AuthManager _authManager;
+        private readonly IAuthManager _authManager;
 
-        public AccountController(AuthManager authManager)
+        public AccountController(IAuthManager authManager)
         {
             this._authManager = authManager;
         }
