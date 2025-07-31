@@ -1,18 +1,13 @@
 ﻿using AutoMapper;
 using HotelListing.Api.Contracts;
+using HotelListing.API.Contracts;
 using HotelListing.API.Data;
 using HotelListing.API.Models.Users;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using NuGet.Common;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace HotelListing.API.Repository
 {
@@ -44,28 +39,28 @@ namespace HotelListing.API.Repository
         public async Task<AuthResponseDto> Login(LoginDto loginDto)
         {
             _user = await _userManager.FindByEmailAsync(loginDto.Email);
-            if (_user is null)
+            bool isValidUser = await _userManager.CheckPasswordAsync(_user, loginDto.Password);
+            
+            if(_user == null || isValidUser == false)
             {
-                return default;
-            }
-
-            bool isValidCredentials = await _userManager.CheckPasswordAsync(_user, loginDto.Password);
-
-            if (!isValidCredentials)
-            {
-                return default;
+                return null;
             }
 
             var token = await GenerateToken();
             return new AuthResponseDto
+
             {
+
                 Token = token,
-                UserId = _user.Id
+
+                UserId = _user.Id,
+
+                RefreshToken = await CreateRefreshToken()
+
             };
         }
-        
 
-        public async Task<IEnumerable<IdentityError>> Register(ApiUserDto userDto)
+        public async Task<IEnumerable<IdentityError>> Register(ApiUserDto userDto, String role)
         {
             _user = _mapper.Map<ApiUser>(userDto);
             _user.UserName = userDto.Email;
@@ -75,6 +70,7 @@ namespace HotelListing.API.Repository
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(_user, "User");
+                if (!(role is "User")) { await _userManager.AddToRoleAsync(_user, role); }
             }
 
             return result.Errors;
@@ -87,7 +83,7 @@ namespace HotelListing.API.Repository
             var username = tokenContent.Claims.ToList().FirstOrDefault(q => q.Type == JwtRegisteredClaimNames.Email)?.Value;
             _user = await _userManager.FindByNameAsync(username);
 
-            if (_user == null || _user.Id != request.UserId)
+            if(_user == null || _user.Id != request.UserId)
             {
                 return null;
             }

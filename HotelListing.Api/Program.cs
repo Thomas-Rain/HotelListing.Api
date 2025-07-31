@@ -20,19 +20,12 @@ builder.Services.AddDbContext<HotelListingDbContext>(options => {
     options.UseSqlServer(connectionString);
 });
 
-builder.Services.AddDbContext<HotelListingDbContext>(options => {
-    options.UseSqlServer(connectionString);
-});
 
-builder.Services.AddIdentity<ApiUser, IdentityRole>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-})
-.AddEntityFrameworkStores<HotelListingDbContext>()
-.AddDefaultTokenProviders();
+builder.Services.AddIdentityCore<ApiUser>()
+    .AddRoles<IdentityRole>()
+    .AddTokenProvider<DataProtectorTokenProvider<ApiUser>>("HotelListingApi")
+    .AddEntityFrameworkStores<HotelListingDbContext>();
+    
 
 
 
@@ -62,23 +55,26 @@ builder.Services.AddScoped<IAuthManager, AuthManager>();
 
 
 
-builder.Services.AddAuthentication(options => {
+builder.Services.AddAuthentication(options =>
+{
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // "Bearer"
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
 
-}).AddJwtBearer(options => {
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero,
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
-    };
-});
+.AddJwtBearer(options =>
+ {
+     options.TokenValidationParameters = new TokenValidationParameters
+     {
+         ValidateIssuerSigningKey = true,
+         ValidateIssuer = true,
+         ValidateAudience = true,
+         ValidateLifetime = true,
+         ClockSkew = TimeSpan.Zero,
+         ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+         ValidAudience = builder.Configuration["JwtSettings:Audience"],
+         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
+     };
+ });
 
 
 

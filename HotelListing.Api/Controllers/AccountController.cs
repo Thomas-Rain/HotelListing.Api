@@ -1,11 +1,12 @@
-﻿using HotelListing.API.Contracts;
+﻿using HotelListing.Api.Contracts;
+using HotelListing.API.Contracts;
 using HotelListing.API.Models.Users;
+using HotelListing.API.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using HotelListing.API.Repository;
-using System.Threading.Tasks;
 using System.Linq;
-using HotelListing.Api.Contracts;
+using System.Threading.Tasks;
 
 namespace HotelListing.API.Controllers
 {
@@ -28,7 +29,30 @@ namespace HotelListing.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> Register([FromBody] ApiUserDto apiUserDto)
         {
-            var errors = await _authManager.Register(apiUserDto);
+            var errors = await _authManager.Register(apiUserDto, "User");
+
+            if (errors.Any())
+            {
+                foreach (var error in errors)
+                {
+                    ModelState.AddModelError(error.Code, error.Description);
+                }
+                return BadRequest(ModelState);
+            }
+
+            return Ok();
+        }
+
+        // POST: api/Account/register
+        [HttpPost]
+        [Route("registerAdmin")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [Authorize(Roles = "Administrator")]
+        public async Task<ActionResult> RegisterAdmin([FromBody] ApiUserDto apiUserDto)
+        {
+            var errors = await _authManager.Register(apiUserDto, "Administrator");
 
             if (errors.Any())
             {
