@@ -8,6 +8,7 @@ using HotelListing.API.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -34,6 +35,7 @@ namespace HotelListing.Api.Controllers
 
         // GET: api/Countries
         [HttpGet("GetAll")]
+        [EnableQuery]
         public async Task<ActionResult<IEnumerable<GetCountryDto>>> GetCountries()
         {
             var countries = await _countriesRepository.GetAllAsync();
@@ -43,6 +45,7 @@ namespace HotelListing.Api.Controllers
 
         // GET: api/Countries/?StartIndex=0&pagesize=25&PageNumber=1
         [HttpGet]
+        [EnableQuery]
         public async Task<ActionResult<PagedResult<GetCountryDto>>> GetPagedCountries([FromQuery] QueryParameters queryParameters)
         {
             var pagedCountriesResult = await _countriesRepository.GetAllAsync<GetCountryDto>(queryParameters);

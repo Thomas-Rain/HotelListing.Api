@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity.UI;
 using HotelListing.Api.Middleware;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Net.Http.Headers;
+using Microsoft.AspNetCore.OData;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -104,6 +105,10 @@ builder.Services.AddResponseCaching(options =>
     options.UseCaseSensitivePaths = true; // Enable case-sensitive paths
 });
 
+builder.Services.AddControllers().AddOData(options =>
+{
+    options.Select().Filter().OrderBy();
+});
 
 
 var app = builder.Build();

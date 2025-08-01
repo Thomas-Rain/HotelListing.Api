@@ -1,4 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json;
 using System.Net;
