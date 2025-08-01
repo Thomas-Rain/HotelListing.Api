@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
+using HotelListing.Api.Models;
+using HotelListing.Api.Models.Country;
 using HotelListing.Api.Models.Hotel;
 using HotelListing.API.Contracts;
 using HotelListing.API.Data;
+using HotelListing.API.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,19 +18,29 @@ namespace HotelListing.API.Controllers
     {
         private readonly IHotelsRepository _hotelsRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<HotelsController> _logger;
 
-        public HotelsController(IHotelsRepository hotelsRepository, IMapper mapper)
+        public HotelsController(IHotelsRepository hotelsRepository, IMapper mapper, ILogger<HotelsController> logger)
         {
             this._hotelsRepository = hotelsRepository;
             this._mapper = mapper;
+            _logger = logger;
         }
 
         // GET: api/Hotels
-        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<ActionResult<IEnumerable<HotelDto>>> GetHotels()
         {
             var hotels = await _hotelsRepository.GetAllAsync();
             return Ok(_mapper.Map<List<HotelDto>>(hotels));
+        }
+
+        // GET: api/Hotels/?StartIndex=0&pagesize=25&PageNumber=1
+        [HttpGet]
+        public async Task<ActionResult<PagedResult<GetCountryDto>>> GetPagedCountries([FromQuery] QueryParameters queryParameters)
+        {
+            var pagedCountriesResult = await _hotelsRepository.GetAllAsync<HotelDto>(queryParameters);
+            return Ok(pagedCountriesResult);
         }
 
         // GET: api/Hotels/5
@@ -38,6 +51,7 @@ namespace HotelListing.API.Controllers
 
             if (hotel == null)
             {
+                _logger.LogWarning($"No record found in  {nameof(GetHotels)} with Id {id}.");
                 return NotFound();
             }
 
