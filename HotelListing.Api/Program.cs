@@ -16,6 +16,10 @@ using HotelListing.Api.Middleware;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Net.Http.Headers;
 using Microsoft.AspNetCore.OData;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using System.Text.Json;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +41,39 @@ builder.Services.AddIdentityCore<ApiUser>()
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(options => { 
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Hotel Listing API", Version = "v1"});
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "0auth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+});
+
+
+
 
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowAll",
@@ -111,6 +147,14 @@ builder.Services.AddControllers().AddOData(options =>
 });
 
 
+builder.Services.AddHealthChecks()
+    .AddCheck<CustomHealthCheck>("Custom Health Check", failureStatus: HealthStatus.Degraded, tags: new[]
+    {
+        "custom",
+
+    }).AddSqlServer(connectionString)
+    .AddDbContextCheck<HotelListingDbContext>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -118,6 +162,52 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+app.MapHealthChecks("/healthcheck", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("custom"),
+    ResultStatusCodes = 
+    {
+        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+    },
+    ResponseWriter = WriteResponse
+});
+
+static Task WriteResponse(HttpContext context, HealthReport healthReport)
+{
+    context.Response.ContentType = "application/json; charset=utf-8";
+
+    var options = new JsonWriterOptions { Indented = true };
+
+    using var memoryStream = new MemoryStream();
+    using (var jsonWriter = new Utf8JsonWriter(memoryStream, options))
+    {
+        jsonWriter.WriteStartObject();
+        jsonWriter.WriteString("status", healthReport.Status.ToString());
+        jsonWriter.WriteStartArray("results");
+
+        foreach (var healthReportEntry in healthReport.Entries)
+        {
+            jsonWriter.WriteStartObject(healthReportEntry.Key);
+            jsonWriter.WriteString("status", healthReportEntry.Value.Status.ToString());
+            jsonWriter.WriteString("description", healthReportEntry.Value.Description);
+            jsonWriter.WriteStartObject("data");
+
+            foreach (var data in healthReportEntry.Value.Data)
+            {
+                jsonWriter.WriteString(data.Key, data.Value?.ToString());
+            }
+            jsonWriter.WriteEndObject();
+            jsonWriter.WriteEndObject();
+        }
+        jsonWriter.WriteEndObject();
+        jsonWriter.WriteEndObject();
+
+        return context.Response.WriteAsync(Encoding.UTF8.GetString(memoryStream.ToArray()));
+    }
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
@@ -148,3 +238,19 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+class CustomHealthCheck : IHealthCheck {
+    public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        var isHealthy = true; // Replace with actual health check logic
+
+        if (isHealthy)
+        {
+            return Task.FromResult(HealthCheckResult.Healthy("The service is healthy."));
+        }
+        
+        return Task.FromResult(new HealthCheckResult(
+            context.Registration.FailureStatus,
+            "The service is unhealthy."));
+    }
+}
